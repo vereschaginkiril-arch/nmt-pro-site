@@ -111,31 +111,89 @@ function identityParams(){
  return new URLSearchParams({user_id:userId,device_id:getDeviceId(),init_data:tg?.initData||''});
 }
 function updatePro(){const b=$('#proStatus');if(b)b.textContent=pro?'💎 PRO АКТИВОВАНО':'🔒 PRO · ДОСТУП ЗА КЛЮЧЕМ'}
-function activateModal(){
- let m=$('#modal');m.classList.remove('hidden');
- m.innerHTML=`<div class="modalwrap" style="background:#050916;z-index:99999"><div class="modal"><h2>🔒 Введіть одноразовий ключ доступу, отриманий у Telegram-боті</h2><p class="muted">Після активації PRO запам’ятає цей Telegram-акаунт і пристрій.</p><input id="code" placeholder="Одноразовий ключ" autocomplete="off" autocapitalize="characters"><div id="msg" role="status" aria-live="polite" style="color:#ffd27b;min-height:25px"></div><button class="primary" id="activate" style="width:100%">Увійти</button></div></div>`;
- const activate=async()=>{
-  const userCode=$('#code').value.trim().toUpperCase(),msg=$('#msg'),btn=$('#activate');
-  if(!userCode){msg.textContent='Введіть ключ доступу.';return}
-  btn.disabled=true;btn.textContent='Перевіряємо…';msg.textContent='Зачекайте, перевіряємо ключ на сервері.';
-  try{
-   const params=identityParams();params.set('code',userCode);
-   const response=await fetch(API_URL+'/verify?'+params.toString(),{method:'GET',headers:{'Accept':'application/json'}});
-   const result=await response.json();
-   if(result.ok===true){pro=true;localStorage.setItem('edu_pro_activated','1');if(result.session)localStorage.setItem('edu_pro_session',result.session);msg.style.color='#78e8c5';msg.textContent=result.message||'✅ Доступ підтверджено!';updatePro();setTimeout(()=>{m.classList.add('hidden');render()},350)}
-   else{msg.style.color='#ff9aa9';msg.textContent=result.message||'❌ Неправильний або використаний ключ.';btn.disabled=false;btn.textContent='Увійти'}
-  }catch(error){msg.style.color='#ff9aa9';msg.textContent='❌ Не вдалося зв’язатися із сервером. Перевір підключення та адресу API.';btn.disabled=false;btn.textContent='Спробувати ще раз'}
- };
- $('#activate').onclick=activate;$('#code').addEventListener('keydown',e=>{if(e.key==='Enter')activate()});
+function saveCloudPro(userId, devId) {
+  const payload = JSON.stringify({ ok: true, u: userId, d: devId });
+  localStorage.setItem('edu_pro_activated', payload);
+  localStorage.setItem('edu_device_id', devId);
+  if (tg?.CloudStorage) {
+    try { tg.CloudStorage.setItem('edu_pro_lock', payload); } catch (e) {}
+  }
 }
-async function bootAuth(){
- try{
-  const response=await fetch(API_URL+'/check_access?'+identityParams().toString(),{headers:{'Accept':'application/json'}});
-  const result=await response.json();
-  if(result.ok===true){pro=true;localStorage.setItem('edu_pro_activated','1');updatePro();render();return}
- }catch(error){console.warn('PRO access check failed:',error)}
- pro=false;localStorage.removeItem('edu_pro_activated');localStorage.removeItem('edu_pro_session');activateModal();
+
+function checkCloudPro(userId) {
+  return new Promise(resolve => {
+    const parseAndMatch = raw => {
+      if (!raw) return null;
+      try {
+        const obj = JSON.parse(raw);
+        if (userId && obj.ok === true && String(obj.u) === String(userId)) return obj;
+        if (!userId && obj.ok === true && obj.d === getDeviceId()) return obj;
+      } catch (e) {}
+      return null;
+    };
+    const localMatch = parseAndMatch(localStorage.getItem('edu_pro_activated'));
+    if (localMatch) {
+      if (localMatch.d) localStorage.setItem('edu_device_id', localMatch.d);
+      return resolve(true);
+    }
+    if (tg?.CloudStorage) {
+      try {
+        tg.CloudStorage.getItem('edu_pro_lock', (err, val) => {
+          const cloudMatch = !err ? parseAndMatch(val) : null;
+          if (cloudMatch) {
+            if (cloudMatch.d) localStorage.setItem('edu_device_id', cloudMatch.d);
+            localStorage.setItem('edu_pro_activated', val);
+            resolve(true);
+          } else resolve(false);
+        });
+        return;
+      } catch (e) {}
+    }
+    resolve(false);
+  });
 }
+
+function activateModal() {
+  let m = $('#modal'); m.classList.remove('hidden');
+  m.innerHTML = `<div class="modalwrap" style="background:#050916;z-index:99999"><div class="modal"><h2>🔒 Введіть одноразовий ключ доступу, отриманий у Telegram-боті</h2><p class="muted">Після активації PRO запам’ятає цей Telegram-акаунт і пристрій.</p><input id="code" placeholder="Одноразовий ключ" autocomplete="off" autocapitalize="characters"><div id="msg" role="status" aria-live="polite" style="color:#ffd27b;min-height:25px"></div><button class="primary" id="activate" style="width:100%">Увійти</button></div></div>`;
+  const activate = async () => {
+    const userCode = $('#code').value.trim().toUpperCase(), msg = $('#msg'), btn = $('#activate');
+    if (!userCode) { msg.textContent = 'Введіть ключ доступу.'; return; }
+    btn.disabled = true; btn.textContent = 'Перевіряємо…'; msg.textContent = 'Зачекайте, перевіряємо ключ на сервері.';
+    try {
+      const params = identityParams(); params.set('code', userCode);
+      const response = await fetch(API_URL + '/verify?' + params.toString(), { method: 'GET', headers: { 'Accept': 'application/json' } });
+      const result = await response.json();
+      if (result.ok === true) {
+        pro = true;
+        const uid = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : '';
+        saveCloudPro(uid, getDeviceId());
+        msg.style.color = '#78e8c5'; msg.textContent = result.message || '✅ Доступ підтверджено!';
+        updatePro(); setTimeout(() => { m.classList.add('hidden'); render(); }, 350);
+      } else {
+        msg.style.color = '#ff9aa9'; msg.textContent = result.message || '❌ Неправильний або використаний ключ.';
+        btn.disabled = false; btn.textContent = 'Увійти';
+      }
+    } catch (error) {
+      msg.style.color = '#ff9aa9'; msg.textContent = '❌ Не вдалося зв’язатися із сервером. Перевір підключення та адресу API.';
+      btn.disabled = false; btn.textContent = 'Спробувати ще раз';
+    }
+  };
+  $('#activate').onclick = activate;
+  $('#code').addEventListener('keydown', e => { if (e.key === 'Enter') activate(); });
+}
+
+async function bootAuth() {
+  const uid = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : '';
+  if (await checkCloudPro(uid)) { pro = true; updatePro(); render(); return; }
+  try {
+    const response = await fetch(API_URL + '/check_access?' + identityParams().toString(), { headers: { 'Accept': 'application/json' } });
+    const result = await response.json();
+    if (result.ok === true) { pro = true; saveCloudPro(uid, getDeviceId()); updatePro(); render(); return; }
+  } catch (error) { console.warn('PRO access check failed:', error); }
+  pro = false; activateModal();
+}
+
 
 function render(){updatePro();let main=$('#main');if(page==='home'){let total=Object.values(data).reduce((n,g)=>n+Object.values(g).reduce((a,l)=>a+l.length,0),0);main.innerHTML=`<section class="hero"><div class="eyebrow">Твоя онлайн-школа</div><h2>Вчися розуміти світ. 🚀</h2><p>Повноцінні уроки з поясненнями, прикладами, тестами та віртуальною хімічною лабораторією. Відкривай теми крок за кроком і навчайся у власному темпі.</p><div class="muted">📚 ${total} уроків у каталозі · 🧪 Віртуальна лабораторія · 📝 Тести з перевіркою</div></section><section class="feature-grid"><button class="feature" id="dailyBtn">📅 План навчання<small>Склади план на тиждень</small></button><button class="feature" id="cardsBtn">🃏 Картки для повторення<small>Тренуй пам’ять</small></button><button class="feature" id="quickBtn">⚡ Швидкий тест<small>10 випадкових запитань</small></button><button class="feature" id="progressBtn">🏆 Мій прогрес<small>Бали й завершені уроки</small></button><button class="feature" id="plantsBtn">🌱 Світ рослин<small>Окремий біологічний розділ</small></button></section><div class="heading"><h2>Обери клас</h2><small>5–12 класи</small></div><div class="grid">${Object.keys(subjectsByGrade).map((g,i)=>`<button class="card" data-group="${g}"><b>${i+5}</b><strong>${g}</strong><small>${Object.keys(data[g]).length} предметів · ${Object.values(data[g]).reduce((a,x)=>a+x.length,0)} уроків</small></button>`).join('')}</div><button class="nmt" data-group="НМТ"><strong>🎯 Підготовка до НМТ / ЗНО</strong><small>Українська, математика, історія, біологія, хімія, географія та англійська →</small></button>`;main.querySelectorAll('[data-group]').forEach(b=>b.onclick=()=>{group=b.dataset.group;page='subjects';render()});wireFeatures()}
 else if(page==='subjects'){main.innerHTML=`<button class="back" id="back">← Головне меню</button><div class="crumb">${esc(group)}</div><div class="heading"><h2>${esc(group==='НМТ'?'Підготовка до НМТ / ЗНО':group)}</h2><small>Обери предмет</small></div><input class="search" id="search" placeholder="🔎 Знайти предмет"><div class="subjects" id="subjects">${Object.entries(data[group]).map(([s,l])=>`<button class="card subject" data-sub="${esc(s)}"><strong>${icons[s]||'📖'} ${esc(s)}</strong><small>${l.length} уроків · конспекти й тести</small></button>`).join('')}</div>`;$('#back').onclick=()=>{page='home';render()};$('#search').oninput=e=>$('#subjects').querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('hidden',!b.innerText.toLowerCase().includes(e.target.value.toLowerCase())));main.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{subject=b.dataset.sub;page='topics';render()})}
