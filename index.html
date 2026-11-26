@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b1020">
 <title>Освітній простір PRO</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://telegram.org"></script>
 <style>
 :root{--bg:#0b1020;--p:#151f34;--p2:#1d2a45;--line:#2c3c5b;--t:#f3f6ff;--m:#aab8d2;--a:#8997ff;--g:#54d8b2}
 *{box-sizing:border-box}
@@ -67,7 +67,6 @@ button{cursor:pointer}
 </head>
 <body>
 
-<!-- Екран блокування (поки не введено одноразовий ключ від бота) -->
 <div id="lockscreen" class="lockscreen">
   <div class="modal">
     <div style="font-size:40px;margin-bottom:8px">🔒</div>
@@ -79,7 +78,6 @@ button{cursor:pointer}
   </div>
 </div>
 
-<!-- Основний освітній простір -->
 <div id="app" class="app hidden">
   <header class="top">
     <div class="brand">
@@ -100,7 +98,6 @@ button{cursor:pointer}
 const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#0b1020')}catch(e){}}
 
-// Перевірка одноразового ключа
 function unlockApp(){
   document.getElementById('lockscreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
