@@ -113,7 +113,7 @@ if (localStorage.getItem('nmt_pro_unlocked') === 'true') {
 document.getElementById('unlockBtn').addEventListener('click', function() {
   const raw = document.getElementById('codeInput').value.trim().toUpperCase();
   const err = document.getElementById('errMsg');
-  const parts = raw.split('-');
+  const [prefix, numStr, checkStr] = raw.split('-');
   const used = JSON.parse(localStorage.getItem('used_nmt_codes') || '[]');
 
   if (used.indexOf(raw) !== -1) {
@@ -121,9 +121,9 @@ document.getElementById('unlockBtn').addEventListener('click', function() {
     return;
   }
 
-  if (parts.length === 3 && parts[0] === 'NMT') {
-    const num = parseInt(parts[1], 10);
-    const check = parseInt(parts[2], 10);
+  if (prefix === 'NMT' && numStr && checkStr) {
+    const num = parseInt(numStr, 10);
+    const check = parseInt(checkStr, 10);
     if (!isNaN(num) && num >= 1000 && num <= 9999 && check === ((num * 7 + 13) % 89 + 10)) {
       used.push(raw);
       localStorage.setItem('used_nmt_codes', JSON.stringify(used));
