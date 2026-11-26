@@ -97,7 +97,7 @@ for(const [g,subs] of Object.entries(subjectsByGrade)){for(const sub of subs){co
 // Remove experimental/laboratory practice topics from the catalog
 for(const g of Object.keys(data)){for(const s of Object.keys(data[g])){data[g][s]=data[g][s].filter(t=>!/(експеримент|експеримент|дослід|лаборатор|практикум)/i.test(t.title));}}
 // Після розгортання server.py заміни адресу нижче на HTTPS-адресу свого API.
-const API_URL='https://YOUR-API-DOMAIN'; let pro=false,page='home',group='',subject='',idx=0,tab='rules',answers={},submitted=false;
+const API_URL='https://school-nmt-bot.onrender.com'; let pro=false,page='home',group='',subject='',idx=0,tab='rules',answers={},submitted=false;
 function updatePro(){const b=$('#proStatus');if(b)b.textContent=pro?'💎 PRO АКТИВОВАНО':'🔒 PRO · ДОСТУП ЗА КЛЮЧЕМ'}
 function activateModal(){
  let m=$('#modal');m.classList.remove('hidden');
