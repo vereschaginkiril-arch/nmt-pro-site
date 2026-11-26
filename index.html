@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1020">
 <title>Освітній простір PRO</title>
 <script src="https://telegram.org"></script>
 <style>
@@ -15,7 +16,7 @@ body{margin:0;background:radial-gradient(ellipse at 10% 0,#202d50,transparent 38
 .logo{background:linear-gradient(135deg,#788cff,#b06cf5);border-radius:15px;padding:9px;font-size:25px}
 .brand h1{font-size:19px;margin:0}
 .muted,small{color:var(--m)}
-button,input{font:inherit}
+button,input,select{font:inherit}
 button{cursor:pointer}
 .pro,.primary{border:0;border-radius:13px;padding:11px 16px;background:linear-gradient(135deg,#788aff,#a16df2);color:white;font-weight:750}
 .pro.active{background:linear-gradient(135deg,#1b9d7d,#51d4ac)}
@@ -29,6 +30,7 @@ button{cursor:pointer}
 .card,.topic,.panel{background:var(--p);border:1px solid var(--line);border-radius:19px}
 .card{padding:16px;text-align:left;color:var(--t)}
 .card b{font-size:28px;display:block}
+.card:hover,.topic:hover{border-color:var(--a);transform:translateY(-2px)}
 .nmt{width:100%;margin-top:13px;padding:20px;border:1px solid #6558bb;border-radius:20px;background:linear-gradient(110deg,#30265f,#1b2948);color:white;text-align:left}
 .nmt strong{font-size:20px}
 .nmt small{display:block}
@@ -51,37 +53,50 @@ button{cursor:pointer}
 .opt{display:block;width:100%;text-align:left;padding:10px;margin:6px 0;border:1px solid var(--line);border-radius:10px;background:#1a2741;color:white}
 .opt.correct{background:#174438;border-color:#35c99c}
 .opt.wrong{background:#482632;border-color:#ff7d91}
+.opt:disabled{opacity:1}
 .progress{height:8px;background:#2b3852;border-radius:20px;overflow:hidden}
 .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--g))}
-.lockscreen{position:fixed;inset:0;background:#0b1020;display:grid;place-items:center;padding:18px;z-index:50}
-.modal{width:min(440px,100%);padding:26px;border-radius:22px;background:#151f34;border:1px solid #35466b;text-align:center}
-.modal input{width:100%;padding:14px;margin:14px 0;background:#0b1020;color:white;border:1px solid var(--line);border-radius:12px;text-align:center;font-size:18px;letter-spacing:1px}
-.err{color:#ff7d91;font-size:14px;margin:8px 0;min-height:20px}
+.search{width:100%;padding:12px;background:#111c30;color:white;border:1px solid var(--line);border-radius:12px;margin:12px 0}
+.lab{padding:18px;margin-top:18px;background:#14243a;border:1px solid #36506d;border-radius:20px}
+.lab select{width:100%;padding:10px;background:#0d192b;color:white;border:1px solid var(--line);border-radius:10px}
+.labrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stage{height:170px;display:grid;place-items:center;margin:12px 0;border-radius:14px;background:radial-gradient(circle,#294b69,#0b1729)}
+.beaker{height:110px;width:80px;border:3px solid #a9d6ef;border-top:0;border-radius:4px 4px 20px 20px;position:relative;overflow:hidden}
+.liquid{position:absolute;bottom:0;width:100%;height:50%;background:#65a9e0aa;transition:.6s}
+.bubble{position:absolute;bottom:5px;left:20px;width:9px;height:9px;border:1px solid white;border-radius:50%;animation:rise 1.5s infinite}
+.bubble:nth-child(2){left:48px;animation-delay:.5s}
+.bubble:nth-child(3){left:35px;animation-delay:1s}
+@keyframes rise{to{transform:translateY(-100px);opacity:0}}
+.result{min-height:40px;color:#b9d9ff}
+.modalwrap{position:fixed;inset:0;background:#050916f2;display:grid;place-items:center;padding:18px;z-index:50}
+.modal{width:min(440px,100%);padding:26px;border-radius:22px;background:#18243c;border:1px solid #465474;text-align:center}
+.modal input{width:100%;padding:14px;margin:12px 0;background:#0e1729;color:white;border:1px solid var(--line);border-radius:12px;text-align:center;font-size:18px;letter-spacing:1px}
+.status{min-height:22px;font-size:14px;margin:8px 0;color:#ff8ea1}
 .hidden{display:none!important}
 .footer{text-align:center;color:#7584a0;font-size:12px;margin:35px 0}
-@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.subjects{grid-template-columns:1fr}}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.subjects{grid-template-columns:1fr}.top{align-items:flex-start}.brand h1{font-size:16px}.pro{font-size:12px;padding:9px}.hero{padding:20px}.panel{padding:14px}}
 </style>
 </head>
 <body>
 
-<div id="lockscreen" class="lockscreen">
+<div id="lockScreen" class="modalwrap">
   <div class="modal">
     <div style="font-size:40px;margin-bottom:8px">🔒</div>
     <h2 style="margin:0 0 8px">Введіть одноразовий ключ доступу</h2>
-    <p class="muted" style="margin:0">Отримайте ключ у нашому Telegram-боті та вставте його нижче.</p>
-    <input id="codeInput" type="text" placeholder="NMT-0000-00" autocomplete="off">
-    <div id="errMsg" class="err"></div>
-    <button onclick="checkAccess()" type="button" class="primary" style="width:100%">Активувати доступ</button>
+    <p class="muted" style="margin:0">Отримайте ключ у Telegram-боті та вставте його нижче, щоб відкрити повний доступ PRO.</p>
+    <input id="codeInput" type="text" placeholder="NMT-XXXX-XXXX" autocomplete="off">
+    <div id="codeStatus" class="status"></div>
+    <button id="activateBtn" type="button" class="primary" style="width:100%">Активувати доступ</button>
   </div>
 </div>
 
-<div id="app" class="app hidden">
+<div id="appWrap" class="app hidden">
   <header class="top">
     <div class="brand">
       <div class="logo">🎓</div>
       <div>
         <h1>Освітній простір</h1>
-        <small>Повна версія PRO · 5–12 класи та НМТ</small>
+        <small>Повна версія PRO · 5–11 класи та НМТ</small>
       </div>
     </div>
     <span class="pro active">✅ PRO активовано</span>
@@ -91,130 +106,92 @@ button{cursor:pointer}
 </div>
 
 <script>
-if (window.Telegram && window.Telegram.WebApp) {
-  window.Telegram.WebApp.ready();
-  window.Telegram.WebApp.expand();
+const API_URL = "https://onrender.com";
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor('#0b1020'); } catch (e) {}
 }
 
-function showSite() {
-  document.getElementById('lockscreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
+function openProSpace() {
+  document.getElementById('lockScreen').classList.add('hidden');
+  document.getElementById('appWrap').classList.remove('hidden');
   render();
 }
 
-if (localStorage.getItem('nmt_pro_ok') === '1') {
-  showSite();
+if (localStorage.getItem('nmt_pro_unlocked') === 'true') {
+  openProSpace();
 }
 
-function checkAccess() {
-  var raw = document.getElementById('codeInput').value.trim().toUpperCase();
-  var err = document.getElementById('errMsg');
-  var used = JSON.parse(localStorage.getItem('used_nmt') || '[]');
+document.getElementById('activateBtn').addEventListener('click', async function() {
+  const input = document.getElementById('codeInput');
+  const statusEl = document.getElementById('codeStatus');
+  const btn = document.getElementById('activateBtn');
+  const userCode = input.value.trim().toUpperCase();
 
-  if (used.indexOf(raw) !== -1) {
-    err.textContent = '⚠️ Цей одноразовий код вже було використано!';
+  if (!userCode) {
+    statusEl.textContent = '⚠️ Введіть код доступу з бота.';
     return;
   }
 
-  if (raw.length === 11 && raw.slice(0, 4) === 'NMT-' && raw.charAt(8) === '-') {
-    var num = parseInt(raw.slice(4, 8), 10);
-    var check = parseInt(raw.slice(9, 11), 10);
-    if (!isNaN(num) && check === ((num * 7 + 13) % 89 + 10)) {
-      used.push(raw);
-      localStorage.setItem('used_nmt', JSON.stringify(used));
-      localStorage.setItem('nmt_pro_ok', '1');
-      showSite();
+  btn.disabled = true;
+  btn.textContent = 'Перевірка коду...';
+  statusEl.style.color = '#aab8d2';
+  statusEl.textContent = 'З’єднуємося із сервером (якщо сервер спав, зачекайте до 30 сек)...';
+
+  try {
+    const res = await fetch(API_URL + '/verify?code=' + encodeURIComponent(userCode));
+    const data = await res.json();
+    if (data.ok) {
+      localStorage.setItem('nmt_pro_unlocked', 'true');
+      openProSpace();
       return;
+    } else {
+      statusEl.style.color = '#ff8ea1';
+      statusEl.textContent = data.message || '❌ Невірний або вже використаний код!';
     }
+  } catch (err) {
+    statusEl.style.color = '#ff8ea1';
+    statusEl.textContent = '❌ Помилка зв’язку із сервером. Спробуйте натиснути ще раз через 5 секунд.';
   }
-  err.textContent = '❌ Невірний код. Перевірте символи або отримайте новий код у боті.';
+
+  btn.disabled = false;
+  btn.textContent = 'Активувати доступ';
+});
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-var bank = {
-  'Українська мова': [
-    {
-      title: 'Звуки й букви',
-      desc: 'Українська абетка має 33 букви та 38 звуків.',
-      rules: [
-        'Шість голосних звуків: [а], [о], [у], [е], [и], [і].',
-        'Я, ю, є позначають два звуки на початку слова, після голосного, апострофа та м’якого знака.'
-      ],
-      qs: [
-        { q: 'Скільки букв в українській абетці?', opts: ['31', '32', '33'], ans: 2 },
-        { q: 'Скільки голосних звуків?', opts: ['6', '10', '12'], ans: 0 }
-      ]
-    },
-    {
-      title: 'Наголоси НМТ',
-      desc: 'Слова з нормативним наголосом для тестування.',
-      rules: [
-        'о́лень, ру́сло, спи́на, ви́падок — наголос на першому складі.',
-        'завда́ння, чита́ння, нови́й, тексто́вий — наголос на другому складі.'
-      ],
-      qs: [
-        { q: 'Де правильно виділено наголос?', opts: ['олЕнь', 'Олень', 'оленЬ'], ans: 1 },
-        { q: 'Як правильно наголосити?', opts: ['випАдок', 'вИпадок', 'випадОк'], ans: 1 }
-      ]
-    }
-  ],
-  'Алгебра': [
-    {
-      title: 'Лінійні рівняння',
-      desc: 'Рівняння виду ax = b.',
-      rules: [
-        'Доданки можна переносити в іншу частину рівняння, змінивши знак на протилежний.'
-      ],
-      qs: [
-        { q: 'Розв’яжіть рівняння 2x + 4 = 10', opts: ['x = 3', 'x = 7', 'x = 2'], ans: 0 }
-      ]
-    }
-  ],
-  'Історія України': [
-    {
-      title: 'Київська Русь',
-      desc: 'Розквіт держави за Володимира Великого та Ярослава Мудрого.',
-      rules: [
-        '988 рік — хрещення Русі Володимиром Великим.',
-        '1036 рік — розгром печенігів Ярославом Мудрим.'
-      ],
-      qs: [
-        { q: 'Рік хрещення Русі:', opts: ['882', '988', '1036'], ans: 1 }
-      ]
-    }
-  ]
+const icons = {
+  'Українська мова': '📘',
+  'Українська література': '📚',
+  'Алгебра': '📐',
+  'Геометрія': '📏',
+  'Історія України': '🏛️',
+  'Англійська мова': '🌍',
+  'Біологія': '🧬',
+  'Хімія': '⚗️',
+  'Географія': '🌎',
+  'Фізика': '⚡',
+  'Інформатика': '💻'
 };
 
-var state = { grade: null, subj: null, topic: null, tab: 'rules', ans: {} };
+function makeLesson(title, desc, rulesStr, qsList) {
+  return { title: title, desc: desc, rules: rulesStr.split('||'), qs: qsList };
+}
 
-function render() {
-  var m = document.getElementById('main');
-  if (!state.grade) {
-    var gHtml = '';
-    var list = ['5', '6', '7', '8', '9', '10', '11'];
-    for (var i = 0; i < list.length; i++) {
-      gHtml += '<button class="card" onclick="openGrade(\'' + list.at(i) + ' клас\')"><b>' + list.at(i) + '</b><span class="muted">клас</span></button>';
-    }
-    m.innerHTML =
-      '<section class="hero"><div class="eyebrow">ПОВНИЙ ДОСТУП ВІДКРИТО</div><h2>Обери клас або підготовку до НМТ</h2></section>' +
-      '<div class="grid">' + gHtml + '</div>' +
-      '<button class="nmt" onclick="openGrade(\'Підготовка до НМТ\')"><strong>🔥 Підготовка до НМТ / ЗНО</strong><small>Правила, дати, формули та тести</small></button>';
-    return;
-  }
+function makeQ(q, optsStr, ans) {
+  return { q: q, opts: optsStr.split('|'), ans: ans };
+}
 
-  if (!state.subj) {
-    var sHtml = '';
-    var keys = Object.keys(bank);
-    for (var i = 0; i < keys.length; i++) {
-      var k = keys.at(i);
-      sHtml += '<button class="card subject" onclick="openSubj(\'' + k + '\')"><strong>📖 ' + k + '</strong><span class="muted">Тем: ' + bank[k].length + '</span></button>';
-    }
-    m.innerHTML = '<div class="crumb"><button onclick="goHome()">← Назад</button> / ' + state.grade + '</div><div class="subjects">' + sHtml + '</div>';
-    return;
-  }
-
-  if (state.topic === null) {
-    var tHtml = '';
-    var arr = bank[state.subj];
-    for (var i = 0; i < arr.length; i++) {
-      tHtml += '<button class="topic" onclick="openTopic(' + i + ')"><div><strong>' + arr.at(i).title + '</strong><div class="muted" style="font-size:13px">' + arr.at(i).desc + '</div></div><span class="tag">Відкрито</span></button>';
-    }
+const bank = {
+  'Українська мова': Array.of(
+    makeLesson('Звуки й букви', 'Звук — найменша одиниця усного мовлення, буква — знак для позначення звука.', 'Є шість голосних звуків: а, о, у, е, и, і.||Приголосні розрізняють за дзвінкістю, глухістю, твердістю та м’якістю.||Я, ю, є позначають два звуки на початку слова, після голосного, апострофа або м’якого знака.', Array.of(
+      makeQ('Скільки букв в українській абетці?', '31|32|33', 2),
+      makeQ('Скільки голосних звуків в українській мові?', '6|10|12', 0),
+      makeQ('Яка буква може позначати два звуки?', 'я|ь|і', 0)
+    )),
+    makeLesson('Наголоси НМТ', 'Слова з нормативним наголосом, які найчастіше трапляються на тестуванні.', 'На 1-й склад: о́лень, ру́сло, спи́на, ви́падок, фо́льга.||На 2-й склад: завда́ння, чита́ння, нови́й, тексто́вий.||На останній склад: катало́г, моноло́г, діало́г, кварта́л.', Array.of(
+      makeQ('Де правильно виділено наголос?', 'олЕнь|Олень|оленЬ', 1),
