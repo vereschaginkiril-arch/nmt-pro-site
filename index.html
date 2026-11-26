@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1020">
 <title>Освітній простір PRO</title>
 <script src="https://telegram.org"></script>
 <style>
@@ -30,7 +29,6 @@ button{cursor:pointer}
 .card,.topic,.panel{background:var(--p);border:1px solid var(--line);border-radius:19px}
 .card{padding:16px;text-align:left;color:var(--t)}
 .card b{font-size:28px;display:block}
-.card:hover,.topic:hover{border-color:var(--a);transform:translateY(-2px)}
 .nmt{width:100%;margin-top:13px;padding:20px;border:1px solid #6558bb;border-radius:20px;background:linear-gradient(110deg,#30265f,#1b2948);color:white;text-align:left}
 .nmt strong{font-size:20px}
 .nmt small{display:block}
@@ -53,7 +51,6 @@ button{cursor:pointer}
 .opt{display:block;width:100%;text-align:left;padding:10px;margin:6px 0;border:1px solid var(--line);border-radius:10px;background:#1a2741;color:white}
 .opt.correct{background:#174438;border-color:#35c99c}
 .opt.wrong{background:#482632;border-color:#ff7d91}
-.opt:disabled{opacity:1}
 .progress{height:8px;background:#2b3852;border-radius:20px;overflow:hidden}
 .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--g))}
 .lockscreen{position:fixed;inset:0;background:#0b1020;display:grid;place-items:center;padding:18px;z-index:50}
@@ -62,7 +59,7 @@ button{cursor:pointer}
 .err{color:#ff7d91;font-size:14px;margin:8px 0;min-height:20px}
 .hidden{display:none!important}
 .footer{text-align:center;color:#7584a0;font-size:12px;margin:35px 0}
-@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.subjects{grid-template-columns:1fr}.top{align-items:flex-start}.brand h1{font-size:16px}.pro{font-size:12px;padding:9px}.hero{padding:20px}.panel{padding:14px}}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.subjects{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -71,10 +68,10 @@ button{cursor:pointer}
   <div class="modal">
     <div style="font-size:40px;margin-bottom:8px">🔒</div>
     <h2 style="margin:0 0 8px">Введіть одноразовий ключ доступу</h2>
-    <p class="muted" style="margin:0">Отримайте ключ у нашому Telegram-боті та вставте його нижче, щоб відкрити всі класи та підготовку до НМТ.</p>
+    <p class="muted" style="margin:0">Отримайте ключ у нашому Telegram-боті та вставте його нижче.</p>
     <input id="codeInput" type="text" placeholder="NMT-0000-00" autocomplete="off">
     <div id="errMsg" class="err"></div>
-    <button id="unlockBtn" type="button" class="primary" style="width:100%">Активувати доступ</button>
+    <button onclick="checkAccess()" type="button" class="primary" style="width:100%">Активувати доступ</button>
   </div>
 </div>
 
@@ -94,115 +91,130 @@ button{cursor:pointer}
 </div>
 
 <script>
-const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  try { tg.setHeaderColor('#0b1020'); } catch (e) {}
+if (window.Telegram && window.Telegram.WebApp) {
+  window.Telegram.WebApp.ready();
+  window.Telegram.WebApp.expand();
 }
 
-function unlockApp() {
+function showSite() {
   document.getElementById('lockscreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  render();
 }
 
-if (localStorage.getItem('nmt_pro_unlocked') === 'true') {
-  unlockApp();
+if (localStorage.getItem('nmt_pro_ok') === '1') {
+  showSite();
 }
 
-document.getElementById('unlockBtn').addEventListener('click', function() {
-  const raw = document.getElementById('codeInput').value.trim().toUpperCase();
-  const err = document.getElementById('errMsg');
-  const [prefix, numStr, checkStr] = raw.split('-');
-  const used = JSON.parse(localStorage.getItem('used_nmt_codes') || '[]');
+function checkAccess() {
+  var raw = document.getElementById('codeInput').value.trim().toUpperCase();
+  var err = document.getElementById('errMsg');
+  var used = JSON.parse(localStorage.getItem('used_nmt') || '[]');
 
   if (used.indexOf(raw) !== -1) {
     err.textContent = '⚠️ Цей одноразовий код вже було використано!';
     return;
   }
 
-  if (prefix === 'NMT' && numStr && checkStr) {
-    const num = parseInt(numStr, 10);
-    const check = parseInt(checkStr, 10);
-    if (!isNaN(num) && num >= 1000 && num <= 9999 && check === ((num * 7 + 13) % 89 + 10)) {
+  if (raw.length === 11 && raw.slice(0, 4) === 'NMT-' && raw.charAt(8) === '-') {
+    var num = parseInt(raw.slice(4, 8), 10);
+    var check = parseInt(raw.slice(9, 11), 10);
+    if (!isNaN(num) && check === ((num * 7 + 13) % 89 + 10)) {
       used.push(raw);
-      localStorage.setItem('used_nmt_codes', JSON.stringify(used));
-      localStorage.setItem('nmt_pro_unlocked', 'true');
-      unlockApp();
+      localStorage.setItem('used_nmt', JSON.stringify(used));
+      localStorage.setItem('nmt_pro_ok', '1');
+      showSite();
       return;
     }
   }
-  err.textContent = '❌ Невірний код доступу. Перевірте символи або отримайте новий код у боті.';
-});
+  err.textContent = '❌ Невірний код. Перевірте символи або отримайте новий код у боті.';
+}
 
-const icons = {
-  'Українська мова': '📘',
-  'Алгебра': '📐',
-  'Історія України': '🏛️',
-  'Англійська мова': '🌍'
-};
-
-const bank = {
+var bank = {
   'Українська мова': [
     {
       title: 'Звуки й букви',
-      desc: 'Звук — найменша одиниця усного мовлення, буква — знак для позначення звука. Українська абетка має 33 букви.',
+      desc: 'Українська абетка має 33 букви та 38 звуків.',
       rules: [
-        'Є шість голосних звуків: [а], [о], [у], [е], [и], [і].',
-        'Приголосні розрізняють за дзвінкістю, глухістю, твердістю та м’якістю.',
-        'Я, ю, є можуть позначати два звуки на початку слова, після голосного, апострофа або м’якого знака.'
+        'Шість голосних звуків: [а], [о], [у], [е], [и], [і].',
+        'Я, ю, є позначають два звуки на початку слова, після голосного, апострофа та м’якого знака.'
       ],
       qs: [
         { q: 'Скільки букв в українській абетці?', opts: ['31', '32', '33'], ans: 2 },
-        { q: 'Скільки голосних звуків?', opts: ['6', '10', '12'], ans: 0 },
-        { q: 'Звук — одиниця', opts: ['усного мовлення', 'письма', 'абзацу'], ans: 0 }
+        { q: 'Скільки голосних звуків?', opts: ['6', '10', '12'], ans: 0 }
       ]
     },
     {
       title: 'Наголоси НМТ',
-      desc: 'Слова з нормативним наголосом, які найчастіше перевіряють на тестуванні.',
+      desc: 'Слова з нормативним наголосом для тестування.',
       rules: [
-        'о́лень, ру́сло, спи́на, ви́падок, фо́льга — наголос на першому складі.',
-        'завда́ння, чита́ння, пізна́ння, нови́й, тексто́вий — наголос на другому складі.',
-        'катало́г, моноло́г, діало́г, кварта́л — наголос на останньому складі.'
+        'о́лень, ру́сло, спи́на, ви́падок — наголос на першому складі.',
+        'завда́ння, чита́ння, нови́й, тексто́вий — наголос на другому складі.'
       ],
       qs: [
         { q: 'Де правильно виділено наголос?', opts: ['олЕнь', 'Олень', 'оленЬ'], ans: 1 },
-        { q: 'Як правильно наголосити?', opts: ['випАдок', 'вИпадок', 'випадОк'], ans: 1 },
-        { q: 'Оберіть правильний варіант:', opts: ['завдАння', 'зАвдання', 'завданнЯ'], ans: 0 }
+        { q: 'Як правильно наголосити?', opts: ['випАдок', 'вИпадок', 'випадОк'], ans: 1 }
       ]
     }
   ],
   'Алгебра': [
     {
       title: 'Лінійні рівняння',
-      desc: 'Рівняння виду ax = b, де x — невідома змінна.',
+      desc: 'Рівняння виду ax = b.',
       rules: [
-        'Доданки можна переносити з однієї частини в іншу, змінивши знак на протилежний.',
-        'Обидві частини рівняння можна множити або ділити на одне й те саме число, відмінне від нуля.'
+        'Доданки можна переносити в іншу частину рівняння, змінивши знак на протилежний.'
       ],
       qs: [
-        { q: 'Розв’яжіть рівняння 2x + 4 = 10', opts: ['x = 3', 'x = 7', 'x = 2'], ans: 0 },
-        { q: 'Чому дорівнює x у рівнянні 5x = -20?', opts: ['4', '-4', '-15'], ans: 1 }
-      ]
-    },
-    {
-      title: 'Формули скороченого множення',
-      desc: 'Базові тотожності для швидкого перетворення виразів на НМТ.',
-      rules: [
-        '(a + b)² = a² + 2ab + b²',
-        '(a - b)² = a² - 2ab + b²',
-        'a² - b² = (a - b)(a + b)'
-      ],
-      qs: [
-        { q: 'Розкладіть на множники x² - 9:', opts: ['(x - 3)(x + 3)', '(x - 9)(x + 9)', '(x - 3)²'], ans: 0 },
-        { q: 'Спростіть вираз (a + 2)²:', opts: ['a² + 4', 'a² + 2a + 4', 'a² + 4a + 4'], ans: 2 }
+        { q: 'Розв’яжіть рівняння 2x + 4 = 10', opts: ['x = 3', 'x = 7', 'x = 2'], ans: 0 }
       ]
     }
   ],
   'Історія України': [
     {
       title: 'Київська Русь',
-      desc: 'Період розквіту держави за князів Володимира Великого та Ярослава Мудрого.',
+      desc: 'Розквіт держави за Володимира Великого та Ярослава Мудрого.',
       rules: [
-        '988 рік — запровадження християнства як державної релігії Володимиром Великим.',
+        '988 рік — хрещення Русі Володимиром Великим.',
+        '1036 рік — розгром печенігів Ярославом Мудрим.'
+      ],
+      qs: [
+        { q: 'Рік хрещення Русі:', opts: ['882', '988', '1036'], ans: 1 }
+      ]
+    }
+  ]
+};
+
+var state = { grade: null, subj: null, topic: null, tab: 'rules', ans: {} };
+
+function render() {
+  var m = document.getElementById('main');
+  if (!state.grade) {
+    var gHtml = '';
+    var list = ['5', '6', '7', '8', '9', '10', '11'];
+    for (var i = 0; i < list.length; i++) {
+      gHtml += '<button class="card" onclick="openGrade(\'' + list.at(i) + ' клас\')"><b>' + list.at(i) + '</b><span class="muted">клас</span></button>';
+    }
+    m.innerHTML =
+      '<section class="hero"><div class="eyebrow">ПОВНИЙ ДОСТУП ВІДКРИТО</div><h2>Обери клас або підготовку до НМТ</h2></section>' +
+      '<div class="grid">' + gHtml + '</div>' +
+      '<button class="nmt" onclick="openGrade(\'Підготовка до НМТ\')"><strong>🔥 Підготовка до НМТ / ЗНО</strong><small>Правила, дати, формули та тести</small></button>';
+    return;
+  }
+
+  if (!state.subj) {
+    var sHtml = '';
+    var keys = Object.keys(bank);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys.at(i);
+      sHtml += '<button class="card subject" onclick="openSubj(\'' + k + '\')"><strong>📖 ' + k + '</strong><span class="muted">Тем: ' + bank[k].length + '</span></button>';
+    }
+    m.innerHTML = '<div class="crumb"><button onclick="goHome()">← Назад</button> / ' + state.grade + '</div><div class="subjects">' + sHtml + '</div>';
+    return;
+  }
+
+  if (state.topic === null) {
+    var tHtml = '';
+    var arr = bank[state.subj];
+    for (var i = 0; i < arr.length; i++) {
+      tHtml += '<button class="topic" onclick="openTopic(' + i + ')"><div><strong>' + arr.at(i).title + '</strong><div class="muted" style="font-size:13px">' + arr.at(i).desc + '</div></div><span class="tag">Відкрито</span></button>';
+    }
